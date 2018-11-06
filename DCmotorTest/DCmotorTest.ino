@@ -1,3 +1,6 @@
+//CODIGO EJEMPLO MOTORES
+//https://www.dfrobot.com/wiki/index.php/12V_DC_Motor_251rpm_w/Encoder_(SKU:_FIT0186)#Specification
+
 int PWMA = 2; //Speed control 
 int PWMB = 3; //Speed control
 
@@ -15,10 +18,10 @@ int SEN_INF_BR = A3; //(Atras Derecha)
 
 
 //SENSORES ULTRASONICOS
-int ULTRA_TRIG_F = 4;    // Trigger Ultra adelante
-int ULTRA_ECHO_F = 5;    // Echo
-int ULTRA_TRIG_R = 6;    // Trigger Ultra Derecha
-int ULTRA_ECHO_R = 7;    // Echo
+int ULTRA_TRIG_F = 4;     // Trigger Ultra adelante
+int ULTRA_ECHO_F = 5;     // Echo
+int ULTRA_TRIG_R = 6;     // Trigger Ultra Derecha
+int ULTRA_ECHO_R = 7;     // Echo
 int ULTRA_TRIG_L = 30;    // Trigger Ultra Izquierda  //DEFINIR PIN
 int ULTRA_ECHO_L = 31;    // Echo                     //DEFINIR PIN
 
