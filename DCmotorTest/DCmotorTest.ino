@@ -19,8 +19,8 @@ int ULTRA_TRIG_F = 4;    // Trigger Ultra adelante
 int ULTRA_ECHO_F = 5;    // Echo
 int ULTRA_TRIG_R = 6;    // Trigger Ultra Derecha
 int ULTRA_ECHO_R = 7;    // Echo
-//int ULTRA_TRIG_L = x;    // Trigger Ultra Izquierda  //DEFINIR PIN
-//int ULTRA_ECHO_L = y;    // Echo                     //DEFINIR PIN
+int ULTRA_TRIG_L = 30;    // Trigger Ultra Izquierda  //DEFINIR PIN
+int ULTRA_ECHO_L = 31;    // Echo                     //DEFINIR PIN
 
 //NOMBRE DE LOS VALORES A UTILIZAR
 bool VALOR_INF_FL; //(Adelante Izquierda)
@@ -48,8 +48,12 @@ void setup(){
   pinMode(SEN_INF_BL , INPUT);
   pinMode(SEN_INF_BR , INPUT);
   
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  pinMode(ULTRA_TRIG_F, OUTPUT);
+  pinMode(ULTRA_ECHO_F, INPUT);
+  pinMode(ULTRA_TRIG_R, OUTPUT);
+  pinMode(ULTRA_ECHO_R, INPUT);
+  pinMode(ULTRA_TRIG_L, OUTPUT);
+  pinMode(ULTRA_ECHO_L, INPUT);
 
   Serial.begin(9600);
 }
@@ -113,8 +117,9 @@ void loop(){
      else if (VALOR_ULTRA_L < 30){
      movimiento(255,"izquierda");
     }
-    else (
+    else {
       movimiento(255,"adelante");
+    }
   }
 }
 
@@ -133,27 +138,19 @@ bool Lectura_INF(int INF){
 }
 
 //Lee los sensores Ultrasonicos y retorna la distancia que detecta en cm.
-int Lectura_ULTRA(int Trigger, int Echo){
+int Lectura_ULTRA(int trigger, int echo){
   
-  digitalWrite(Trigger, LOW);
+  digitalWrite(trigger, LOW);
   delayMicroseconds(5);
-  digitalWrite(Trigger, HIGH);
+  digitalWrite(trigger, HIGH);
   delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+  digitalWrite(trigger, LOW);
 
-  pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH);
+  pinMode(echo, INPUT);
+  int duration = pulseIn(echo, HIGH);
 
   int cm = (duration/2) / 29.1;
   return cm;
-}
-
-
-void circuito1(){
-  while(!lectura()){
-    adelante(225,0);
-  }    
-  orientacion++;
 }
 
 void movimiento(int speed, String direction){
@@ -164,7 +161,7 @@ bool CheckAllInf(){
   if (VALOR_INF_FL == true || VALOR_INF_FR == true || VALOR_INF_BL == true || VALOR_INF_BR == true){
     return true;
   }
-  else {return false}
+  else {return false;}
 }
 
 
@@ -253,4 +250,49 @@ void move(int speed, int direction){
 
 void stop(){ 
   digitalWrite(STBY, LOW); 
+}
+
+
+
+
+
+
+
+
+
+
+
+//The sample code for driving one way motor encoder
+const byte encoder0pinA = 2;//A pin -> the interrupt pin 0
+const byte encoder0pinB = 4;//B pin -> the digital pin 4
+byte encoder0PinALast;
+int duration;//the number of the pulses
+boolean Direction;//the rotation direction 
+
+void EncoderInit()
+{
+  Direction = true;//default -> Forward  
+  pinMode(encoder0pinB,INPUT);  
+  attachInterrupt(0, wheelSpeed, CHANGE);
+}
+ 
+void wheelSpeed()
+{
+  int Lstate = digitalRead(encoder0pinA);
+  if((encoder0PinALast == LOW) && Lstate==HIGH)
+  {
+    int val = digitalRead(encoder0pinB);
+    if(val == LOW && Direction)
+    {
+      Direction = false; //Reverse
+    }
+    else if(val == HIGH && !Direction)
+    {
+      Direction = true;  //Forward
+    }
+  }
+  encoder0PinALast = Lstate;
+ 
+  if(!Direction)  duration++;
+  else  duration--;
 }
