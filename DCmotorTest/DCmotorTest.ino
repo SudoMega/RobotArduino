@@ -10,6 +10,12 @@ int AIN2 = 8; //Direction1
 int BIN1 = 12; //Direction2
 int BIN2 = 11; //Direction2 
 
+//PIN MOTORES
+byte encoder0PinA = 20;
+byte encoder0PinB = 21;
+byte encoder1PinA = 22;
+byte encoder1PinB = 23;
+
 //SENSORES INFRAROJOS
 int SEN_INF_FL = A0; //(Adelante Izquierda)
 int SEN_INF_FR = A1; //(Adelante Derecha)
@@ -60,8 +66,6 @@ void setup(){
 
   Serial.begin(9600);
 }
-
-String Enemigo = "";
 
 void loop(){
 /*
@@ -156,10 +160,6 @@ int Lectura_ULTRA(int trigger, int echo){
   return cm;
 }
 
-void movimiento(int speed, String direction){
-  
-}
-
 bool CheckAllInf(){
   if (VALOR_INF_FL == true || VALOR_INF_FR == true || VALOR_INF_BL == true || VALOR_INF_BR == true){
     return true;
@@ -167,50 +167,31 @@ bool CheckAllInf(){
   else {return false;}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void adelante(int speed, int direction){
+void movimiento (int speed, String direction){
   digitalWrite(STBY, HIGH);
   boolean inPinA1;
   boolean inPinA2;
   boolean inPinB1;
   boolean inPinB2;
-   if(direction ==0){
+   if(direction =="adelante"){
     inPinA1 = LOW;
     inPinA2 = HIGH;
     inPinB1 = LOW;
     inPinB2 = HIGH;
    }
-   if(direction == 1){
+   if(direction == "izquierda"){
      inPinA1 = HIGH;
      inPinA2 = LOW;
      inPinB1 = HIGH;
      inPinB2 = LOW;
     }
-   if(direction == 2){
+   if(direction == "derecha"){
     // inPinA1 = LOW;
    // inPinA2 = LOW;
      inPinB1 = HIGH;
      inPinB2 = LOW;
    }
-   if(direction == 3){
+   if(direction == "algo"){
      inPinA1 = HIGH;
      inPinA2 = LOW;
     // inPinB1 = LOW;
@@ -224,15 +205,6 @@ void adelante(int speed, int direction){
     digitalWrite(BIN2, inPinB2);
     analogWrite(PWMB, speed);
  }
-
-void giroD(){
-   
- 
-}
-
-
-
-
 
 void move(int speed, int direction){
   
