@@ -5,16 +5,10 @@ int PWMA = 2; //Speed control
 int PWMB = 3; //Speed control
 
 int STBY = 10;
-int AIN1 = 9; //Direction1
-int AIN2 = 8; //Direction1
+int AIN1 = 9;  //
+int AIN2 = 8;  //Direction1
 int BIN1 = 12; //Direction2
 int BIN2 = 11; //Direction2 
-
-//PIN MOTORES
-byte encoder0PinA = 20;
-byte encoder0PinB = 21;
-byte encoder1PinA = 22;
-byte encoder1PinB = 23;
 
 //SENSORES INFRAROJOS
 int SEN_INF_FL = A0; //(Adelante Izquierda)
@@ -100,32 +94,38 @@ void loop(){
   if (CheckAllInf() == true){
 
     if(VALOR_INF_FL == true){
-      movimiento(255,"derecha");
+      movimiento(255, 255,"derecha");
+      delay(400);
     }
     if(VALOR_INF_FR == true){
-      movimiento(255,"izquierda");
+      movimiento(255, 255,"izquierda");
+      delay(400);
     }
     if(VALOR_INF_BL == true){
-      movimiento(255,"derecha");
+      movimiento(255, 255,"derecha");
+      delay(400);
     }
     if(VALOR_INF_BR == true){
-      movimiento(255,"izquierda");
+      movimiento(255, 255,"izquierda");
+      delay(400);
     }     
     
   }
   else{
     if (VALOR_ULTRA_F < 30){
-      movimiento(255,"adelante");
+      movimiento(255, 255,"adelante");
     
     }
     else if (VALOR_ULTRA_R < 30){
-      movimiento(255,"derecha");
+      movimiento(255, 255,"derecha");
+      delay(400);
     }
      else if (VALOR_ULTRA_L < 30){
-     movimiento(255,"izquierda");
+      movimiento(255, 255,"izquierda");
+      delay(400);
     }
     else {
-      movimiento(255,"adelante");
+      movimiento(255, 255,"adelante");
     }
   }
 }
@@ -167,64 +167,54 @@ bool CheckAllInf(){
   else {return false;}
 }
 
-void movimiento (int speed, String direction){
+void movimiento (int speedI, int speedD, String direction){
   digitalWrite(STBY, HIGH);
   boolean inPinA1;
   boolean inPinA2;
   boolean inPinB1;
   boolean inPinB2;
    if(direction =="adelante"){
-    inPinA1 = LOW;
-    inPinA2 = HIGH;
-    inPinB1 = LOW;
-    inPinB2 = HIGH;
+    //SI SE MUEVE HACIA ATRAS, INVERTIR CABLES +/- O CAMBIAR LOW CON HIGH
+    inPinA1 = HIGH;
+    inPinA2 = LOW;
+    inPinB1 = HIGH;
+    inPinB2 = LOW;
    }
    if(direction == "izquierda"){
+     //SI GIRA HACIA LA DERECHA, CAMBIAR inPin1 CON inPinB
      inPinA1 = HIGH;
      inPinA2 = LOW;
-     inPinB1 = HIGH;
-     inPinB2 = LOW;
+     inPinB1 = LOW;
+     inPinB2 = HIGH;
     }
    if(direction == "derecha"){
-    // inPinA1 = LOW;
-   // inPinA2 = LOW;
+     inPinA1 = LOW;
+     inPinA2 = HIGH;
      inPinB1 = HIGH;
      inPinB2 = LOW;
    }
-   if(direction == "algo"){
-     inPinA1 = HIGH;
-     inPinA2 = LOW;
-    // inPinB1 = LOW;
-    // inPinB2 = HIGH;
+   if(direction == "atras"){
+     inPinA1 = LOW;
+     inPinA2 = HIGH;
+     inPinB1 = LOW;
+     inPinB2 = HIGH;
    }
     digitalWrite(AIN1, inPinA1);
-    digitalWrite(AIN2, inPinB2);
-    analogWrite(PWMA, speed);
+    digitalWrite(AIN2, inPinA2);
+    analogWrite(PWMA, speedI);
     
     digitalWrite(BIN1, inPinB1);
     digitalWrite(BIN2, inPinB2);
-    analogWrite(PWMB, speed);
+    analogWrite(PWMB, speedD);
  }
 
-void move(int speed, int direction){
-  
-  digitalWrite(STBY, HIGH);
 
-  boolean inPin1 = LOW;
-  boolean inPin2 = HIGH;
-
-  if(direction == 1){
-    inPin1 = HIGH;
-    inPin2 = LOW;
-  }
-
-    digitalWrite(AIN1, inPin1);
-    digitalWrite(AIN2, inPin2);
-    analogWrite(PWMA, speed);
-}
-
+//Funciones para comenzar o detener la placa
 void stop(){ 
   digitalWrite(STBY, LOW); 
+}
+void start(){ 
+  digitalWrite(STBY, HIGH); 
 }
 
 
