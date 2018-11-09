@@ -1,14 +1,16 @@
-//CODIGO EJEMPLO MOTORES
+//CODIGO EJEMPLO MOTORES CON ENCODER
 //https://www.dfrobot.com/wiki/index.php/12V_DC_Motor_251rpm_w/Encoder_(SKU:_FIT0186)#Specification
 
-int PWMA = 2; //Speed control 
-int PWMB = 3; //Speed control
+bool robotOn = false; //switch para encender al robot
+
+int PWMA = 2; //Speed control, motor 1, rueda izquierda
+int PWMB = 3; //Speed control, motor 2, rueda derecha
 
 int STBY = 10;
-int AIN1 = 9;  //
-int AIN2 = 8;  //Direction1
-int BIN1 = 12; //Direction2
-int BIN2 = 11; //Direction2 
+int AIN1 = 9;  //Motor 1, Rueda Izquierda, polo positivo
+int AIN2 = 8;  //Motor 1, Rueda Izquierda, polo negativo
+int BIN1 = 12; //Motor 2, Rueda derecha, polo positivo
+int BIN2 = 11; //Motor 2, Rueda derecha, polo negativo 
 
 //SENSORES INFRAROJOS
 int SEN_INF_FL = A0; //(Adelante Izquierda)
@@ -22,20 +24,17 @@ int ULTRA_TRIG_F = 4;     // Trigger Ultra adelante
 int ULTRA_ECHO_F = 5;     // Echo
 int ULTRA_TRIG_R = 6;     // Trigger Ultra Derecha
 int ULTRA_ECHO_R = 7;     // Echo
-int ULTRA_TRIG_L = 30;    // Trigger Ultra Izquierda  //DEFINIR PIN
-int ULTRA_ECHO_L = 31;    // Echo                     //DEFINIR PIN
+int ULTRA_TRIG_L = 30;    // Trigger Ultra Izquierda 
+int ULTRA_ECHO_L = 31;    // Echo                    
 
 //NOMBRE DE LOS VALORES A UTILIZAR
-bool VALOR_INF_FL; //(Adelante Izquierda)
-bool VALOR_INF_FR; //(Adelante Derecha)
-bool VALOR_INF_BL; //(Atras Izquierda)
-bool VALOR_INF_BR; //(Atras Derecha)
+bool VALOR_INF_FL; //(infrarojo Adelante Izquierda)
+bool VALOR_INF_FR; //(infrarojo Adelante Derecha)
+bool VALOR_INF_BL; //(infrarojo Atras Izquierda)
+bool VALOR_INF_BR; //(infrarojo Atras Derecha)
 int VALOR_ULTRA_F; //(Ultra adelante)
-int VALOR_ULTRA_R; //(Ultra adelante)
-int VALOR_ULTRA_L; //(Ultra adelante)
-
-int cont = 1;
-int orientacion = 0;
+int VALOR_ULTRA_R; //(Ultra derecha)
+int VALOR_ULTRA_L; //(Ultra izquierda)
 
 void setup(){
   pinMode(STBY, OUTPUT);
@@ -78,6 +77,15 @@ void loop(){
   adelante(0,0);
   delay(2500);
   */
+////FASE DE ENCENDIDO Y APAGADO////
+/*esto aun no esta implementado porque falta el modulo bluetooth
+  if (dataBT == 1){robotOn = true;}
+  if (dataBT == 0){robotOn = false;}
+  if (robotOn == true){encendido();}
+  else{apagado();}
+*/
+encendido(); //Con esto se enciende el robot pormientras, aun no esta terminado el bluetooth
+
 ////FASE DE LECTURA DE SENSORES////
 
   VALOR_INF_FL = Lectura_INF(SEN_INF_FL);
@@ -167,8 +175,8 @@ bool CheckAllInf(){
   else {return false;}
 }
 
+//Funcion para controlar el movimiento, se piden las velocidades de cada rueda (izquierda y derecha) y un String con la direccion
 void movimiento (int speedI, int speedD, String direction){
-  digitalWrite(STBY, HIGH);
   boolean inPinA1;
   boolean inPinA2;
   boolean inPinB1;
@@ -180,14 +188,14 @@ void movimiento (int speedI, int speedD, String direction){
     inPinB1 = HIGH;
     inPinB2 = LOW;
    }
-   if(direction == "izquierda"){
-     //SI GIRA HACIA LA DERECHA, CAMBIAR inPin1 CON inPinB
+   if(direction == "derecha"){
+     //SI GIRA HACIA LA IZQUIERDA, CAMBIAR inPin1 CON inPinB
      inPinA1 = HIGH;
      inPinA2 = LOW;
      inPinB1 = LOW;
      inPinB2 = HIGH;
     }
-   if(direction == "derecha"){
+   if(direction == "izquierda"){
      inPinA1 = LOW;
      inPinA2 = HIGH;
      inPinB1 = HIGH;
@@ -210,54 +218,9 @@ void movimiento (int speedI, int speedD, String direction){
 
 
 //Funciones para comenzar o detener la placa
-void stop(){ 
+void apagado(){ 
   digitalWrite(STBY, LOW); 
 }
-void start(){ 
+void encendido(){ 
   digitalWrite(STBY, HIGH); 
-}
-
-
-
-
-
-
-
-
-
-
-
-//The sample code for driving one way motor encoder
-const byte encoder0pinA = 2;//A pin -> the interrupt pin 0
-const byte encoder0pinB = 4;//B pin -> the digital pin 4
-byte encoder0PinALast;
-int duration;//the number of the pulses
-boolean Direction;//the rotation direction 
-
-void EncoderInit()
-{
-  Direction = true;//default -> Forward  
-  pinMode(encoder0pinB,INPUT);  
-  attachInterrupt(0, wheelSpeed, CHANGE);
-}
- 
-void wheelSpeed()
-{
-  int Lstate = digitalRead(encoder0pinA);
-  if((encoder0PinALast == LOW) && Lstate==HIGH)
-  {
-    int val = digitalRead(encoder0pinB);
-    if(val == LOW && Direction)
-    {
-      Direction = false; //Reverse
-    }
-    else if(val == HIGH && !Direction)
-    {
-      Direction = true;  //Forward
-    }
-  }
-  encoder0PinALast = Lstate;
- 
-  if(!Direction)  duration++;
-  else  duration--;
 }
