@@ -2,6 +2,8 @@
 //https://www.dfrobot.com/wiki/index.php/12V_DC_Motor_251rpm_w/Encoder_(SKU:_FIT0186)#Specification
 
 bool robotOn = false; //switch para encender al robot
+int dataBT = 0;
+int estrategia = 0;
 
 int PWMA = 2; //Speed control, motor 1, rueda izquierda
 int PWMB = 3; //Speed control, motor 2, rueda derecha
@@ -58,49 +60,67 @@ void setup(){
   pinMode(ULTRA_ECHO_L, INPUT);
 
   Serial.begin(9600);
+  apagado();
 }
 
 void loop(){
-/*
-  delay(5000);
- for(int i=0;i<200;i++){
-  delay(50);
-  if(!lectura()){
-    adelante(255,0);
-    delay(10);
-    }
-  else{
-    adelante(255,2);
-    delay(800);
-    }
-  }
-  adelante(0,0);
-  delay(2500);
-  */
-////FASE DE ENCENDIDO Y APAGADO////
-/*esto aun no esta implementado porque falta el modulo bluetooth
-  if (dataBT == 1){robotOn = true;}
-  if (dataBT == 0){robotOn = false;}
-  if (robotOn == true){encendido();}
-  else{apagado();}
-*/
+
+////FASE DE ENCENDIDO Y ESTRATEGIA INICIAL////
+
+//revisarEncendido();
 encendido(); //Con esto se enciende el robot pormientras, aun no esta terminado el bluetooth
+  if(estrategia == 1){
+    
+    movimiento(255, 255,"adelante");
+    delay(500);
+
+    estrategia = 0;
+  }
+  if(estrategia == 2){
+    
+    movimiento(255, 255,"derecha");
+    delay(300);
+    movimiento(255, 255,"adelante");
+    delay(400);
+    movimiento(255, 255,"izquierda");
+    delay (200);
+    
+    estrategia = 0;
+  }
+  if(estrategia == 3){
+
+
+  estrategia = 0;
+  }
 
 ////FASE DE LECTURA DE SENSORES////
 
-  VALOR_INF_FL = Lectura_INF(SEN_INF_FL);
-  VALOR_INF_FR = Lectura_INF(SEN_INF_FR);
-  VALOR_INF_BL = Lectura_INF(SEN_INF_BL);
-  VALOR_INF_BR = Lectura_INF(SEN_INF_BR);
-
-  VALOR_ULTRA_F = Lectura_ULTRA(ULTRA_TRIG_F,ULTRA_ECHO_F);
-  VALOR_ULTRA_R = Lectura_ULTRA(ULTRA_TRIG_R,ULTRA_ECHO_R);
-  VALOR_ULTRA_L = Lectura_ULTRA(ULTRA_TRIG_L,ULTRA_ECHO_L);
+checkAllSensors();
 
 ////FASE DE TOMA DE DECISIONES////
 
-  if (CheckAllInf() == true){
+while (CheckAllInf() == false){
 
+  //revisarEncendido(); //Revisa si hay que apagar el robot
+  checkAllSensors(); // Lo primero que hace es actualizar el valor de los sensores
+  
+  if (VALOR_ULTRA_F < 20){
+      movimiento(255, 255,"adelante");
+    
+    }
+    else if (VALOR_ULTRA_R < 20){
+      movimiento(255, 255,"derecha");
+    }
+     else if (VALOR_ULTRA_L < 20){
+      movimiento(255, 255,"izquierda");
+    }
+    else {
+      movimiento(255, 255,"derecha");
+    }
+  
+  }
+  
+  checkAllSensors();
     if(VALOR_INF_FL == true){
       movimiento(255, 255,"derecha");
       delay(400);
@@ -117,25 +137,7 @@ encendido(); //Con esto se enciende el robot pormientras, aun no esta terminado 
       movimiento(255, 255,"izquierda");
       delay(400);
     }     
-    
-  }
-  else{
-    if (VALOR_ULTRA_F < 30){
-      movimiento(255, 255,"adelante");
-    
-    }
-    else if (VALOR_ULTRA_R < 30){
-      movimiento(255, 255,"derecha");
-      delay(400);
-    }
-     else if (VALOR_ULTRA_L < 30){
-      movimiento(255, 255,"izquierda");
-      delay(400);
-    }
-    else {
-      movimiento(255, 255,"adelante");
-    }
-  }
+ 
 }
 
 //Lee los sensores infrarojos que se le entregan, con un treshold de 750.
@@ -221,6 +223,34 @@ void movimiento (int speedI, int speedD, String direction){
 void apagado(){ 
   digitalWrite(STBY, LOW); 
 }
+
 void encendido(){ 
+  delay (5000);
   digitalWrite(STBY, HIGH); 
 }
+
+void revisarEncendido(){
+  if(Serial.available() > 0){
+    dataBT = Serial.read();
+    if (dataBT == 1){robotOn = true; estrategia = 1;}
+    if (dataBT == 2){robotOn = true; estrategia = 2;}
+    if (dataBT == 3){robotOn = true; estrategia = 3;}
+    if (dataBT == 0){robotOn = false;}
+    if (robotOn == true){digitalWrite(STBY, HIGH);}
+    else{digitalWrite(STBY, LOW);}
+  }
+}
+
+  void checkAllSensors(){
+ 
+    VALOR_INF_FL = Lectura_INF(SEN_INF_FL);
+    VALOR_INF_FR = Lectura_INF(SEN_INF_FR);
+    VALOR_INF_BL = Lectura_INF(SEN_INF_BL);
+    VALOR_INF_BR = Lectura_INF(SEN_INF_BR);
+
+    VALOR_ULTRA_F = Lectura_ULTRA(ULTRA_TRIG_F,ULTRA_ECHO_F);
+    VALOR_ULTRA_R = Lectura_ULTRA(ULTRA_TRIG_R,ULTRA_ECHO_R);
+    VALOR_ULTRA_L = Lectura_ULTRA(ULTRA_TRIG_L,ULTRA_ECHO_L);
+  
+  }
+
