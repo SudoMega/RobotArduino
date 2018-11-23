@@ -1,24 +1,48 @@
 //CODIGO EJEMPLO MOTORES CON ENCODER
 //https://www.dfrobot.com/wiki/index.php/12V_DC_Motor_251rpm_w/Encoder_(SKU:_FIT0186)#Specification
 
-bool robotOn = false; //switch para encender al robot
-int dataBT = 0;
-int estrategia = 0;
+/*RobotSumo.apk DEBERIA ESTAR ADJUNTO CON ESTE CODIGO, ES LA APLICACION PARA EL CONTROL REMOTO*/
+
+/*Este codigo es para hacer funcionar un robot sumo
+ *no se le an realizado todas las pruebas pertinentes, asi que no se debe utilizar sin antes probar como funciona.
+ *Probablemente sea mejor crear un metodo con las estrategias que se quieran utilizar
+ *
+ *Se escribio este codigo pensando en un robot con 3 sensores Ultrasonicos (adelante, izquierda y derecha) 
+ *y 4 sensores infrarojos (uno en cada esquina, apuntando hacia el suelo), pero es escalable usando los metodos
+ * 
+ * El robot primero inicializa todos sus Pins, apaga sus motores y comienza el loop
+ * si es la primera vez que se enciende, la variable firstBoot lo detiene para esperar un encendido desde el bluetooth
+ * cuando llega la señal, el robot ejecuta una de las 3 estrategias programadas,
+ * luego el robot verifiica si  hay infrarojos activos, si los hay, trata de salir de la linea, 
+ * si no hay, prosigue a revisar sus ultrasonicos,
+ * si detecta algo, gira acorde a la posicion enemiga, si esta enfrente, se mantiene persiguiendolo en linea recta,
+ * finalmente si no encuentra nada, esta por default que gire a la derecha.
+ * 
+ *CAMBIAR LOS PINS DEPENDIENDO DE COMO LO ORDENEN EN LA PLACA, SE RECOMIENDA PLACAS CON MUCHOS PINS DIGITALES COMO EL ARDUINO MEGA 
+ */
+
+#include <SoftwareSerial.h>
+                                  //Variable para utilizar bluetooth sin perder las puertas Serial
+SoftwareSerial Bluetooth(10, 11); // CONECTAR RX Y TX EN PINS CONTRARIOS, SINO NO FUNCIONA EL BLUETOOTH
+                                  
+bool robotOn = false;  //switch para encender al robot
+int estrategia = 0;    //Variable para elegir la estrategia inicial
+bool firstBoot = false;//Revisa si es la primera vez que se enciende
 
 int PWMA = 2; //Speed control, motor 1, rueda izquierda
 int PWMB = 3; //Speed control, motor 2, rueda derecha
 
-int STBY = 10;
+int STBY = 13; //nos permite poner en standby a los motores
 int AIN1 = 9;  //Motor 1, Rueda Izquierda, polo positivo
 int AIN2 = 8;  //Motor 1, Rueda Izquierda, polo negativo
 int BIN1 = 12; //Motor 2, Rueda derecha, polo positivo
-int BIN2 = 11; //Motor 2, Rueda derecha, polo negativo 
+int BIN2 = 20; //Motor 2, Rueda derecha, polo negativo 
 
 //SENSORES INFRAROJOS
-int SEN_INF_FL = A0; //(Adelante Izquierda)
-int SEN_INF_FR = A1; //(Adelante Derecha)
-int SEN_INF_BL = A2; //(Atras Izquierda)
-int SEN_INF_BR = A3; //(Atras Derecha)
+int SEN_INF_FL = 21; //(Adelante Izquierda)
+int SEN_INF_FR = 20; //(Adelante Derecha)
+int SEN_INF_BL = 19; //(Atras Izquierda)
+int SEN_INF_BR = 18; //(Atras Derecha)
 
 
 //SENSORES ULTRASONICOS
@@ -59,16 +83,16 @@ void setup(){
   pinMode(ULTRA_TRIG_L, OUTPUT);
   pinMode(ULTRA_ECHO_L, INPUT);
 
+  Bluetooth.begin(9600);
   Serial.begin(9600);
-  apagado();
+  apagado(); //Se apagan los motores, para que el sumo no se mueva
 }
 
 void loop(){
-
 ////FASE DE ENCENDIDO Y ESTRATEGIA INICIAL////
-
-//revisarEncendido();
-encendido(); //Con esto se enciende el robot pormientras, aun no esta terminado el bluetooth
+while (firstBoot == false){
+revisarEncendido();
+}
   if(estrategia == 1){
     
     movimiento(255, 255,"adelante");
@@ -95,31 +119,35 @@ encendido(); //Con esto se enciende el robot pormientras, aun no esta terminado 
 
 ////FASE DE LECTURA DE SENSORES////
 
-checkAllSensors();
+  checkAllSensors();
 
 ////FASE DE TOMA DE DECISIONES////
 
-while (CheckAllInf() == false){
+  while (CheckAllInf() == false){
 
-  //revisarEncendido(); //Revisa si hay que apagar el robot
+  revisarEncendido(); //Revisa si hay que apagar el robot
   checkAllSensors(); // Lo primero que hace es actualizar el valor de los sensores
-  
-  if (VALOR_ULTRA_F < 20){
-      movimiento(255, 255,"adelante");
+
+  //Ciclo While que nos mantiene dentro si el sensor ultrasonico detecto al enemigo, cosa de no dejar nunca de avanzar
+     while (VALOR_ULTRA_F < 20){
+
+        revisarEncendido(); //Revisa si hay que apagar el robot
+        checkAllSensors(); // Lo primero que hace es actualizar el valor de los sensores
+        movimiento(255, 255,"adelante");
     
     }
-    else if (VALOR_ULTRA_R < 20){
-      movimiento(255, 255,"derecha");
+     if (VALOR_ULTRA_R < 20){
+       movimiento(255, 255,"derecha");
     }
      else if (VALOR_ULTRA_L < 20){
-      movimiento(255, 255,"izquierda");
+       movimiento(255, 255,"izquierda");
     }
     else {
-      movimiento(255, 255,"derecha");
+       movimiento(255, 255,"derecha"); //Por default gira hacia la izquierda
     }
   
   }
-  
+  //Estos movimientos cuentan con pequeños delays porque estan diseñados para sacar al robot de la linea blanca
   checkAllSensors();
     if(VALOR_INF_FL == true){
       movimiento(255, 255,"derecha");
@@ -140,19 +168,26 @@ while (CheckAllInf() == false){
  
 }
 
-//Lee los sensores infrarojos que se le entregan, con un treshold de 750.
+//Lee los sensores infrarojos que se le entregan, si hay problemas con los colores, invertir la logica (variable 'diff')
 bool Lectura_INF(int INF){
-  
-  float value;
-  value = analogRead(INF);  //lectura digital de pin
-  if(value < 750  ){
-    Serial.println(value);
+
+  pinMode(INF, OUTPUT );
+  digitalWrite( INF, HIGH );  
+  delayMicroseconds(10);
+  pinMode(INF, INPUT );
+
+  long time = micros();
+
+  while (digitalRead(INF) == HIGH && micros() - time < 3000); 
+  int diff = micros() - time;
+
+  //Este if dice si es negro o blanco
+  if (diff < 1000){
     return true;
-  }else{
-    Serial.println(value);
-    return false;
-  } 
-}
+    } 
+
+  else {return false;}
+  }
 
 //Lee los sensores Ultrasonicos y retorna la distancia que detecta en cm.
 int Lectura_ULTRA(int trigger, int echo){
@@ -166,10 +201,12 @@ int Lectura_ULTRA(int trigger, int echo){
   pinMode(echo, INPUT);
   int duration = pulseIn(echo, HIGH);
 
+  //Retorna la medicion en centimetros
   int cm = (duration/2) / 29.1;
   return cm;
 }
 
+//Revisa todos los sensores infrarojos, si hay alguno encendido, retorna true
 bool CheckAllInf(){
   if (VALOR_INF_FL == true || VALOR_INF_FR == true || VALOR_INF_BL == true || VALOR_INF_BR == true){
     return true;
@@ -209,6 +246,7 @@ void movimiento (int speedI, int speedD, String direction){
      inPinB1 = LOW;
      inPinB2 = HIGH;
    }
+   //Aqui se ingresan las velocidades y direcciones
     digitalWrite(AIN1, inPinA1);
     digitalWrite(AIN2, inPinA2);
     analogWrite(PWMA, speedI);
@@ -219,28 +257,32 @@ void movimiento (int speedI, int speedD, String direction){
  }
 
 
-//Funciones para comenzar o detener la placa
+//Funciones para comenzar o detener los motores, encendido tiene un delay de 5 segundos (reglas del sumo)
 void apagado(){ 
   digitalWrite(STBY, LOW); 
 }
 
 void encendido(){ 
   delay (5000);
+  firstBoot=true;
   digitalWrite(STBY, HIGH); 
 }
 
+//Revisa si hay algun mensaje desde el bluetooth, si lo hay, ve que numero se recibio y selecciona una estrategia
 void revisarEncendido(){
-  if(Serial.available() > 0){
-    dataBT = Serial.read();
+  if(Bluetooth.available() > 0){
+    int dataBT = Bluetooth.read();
+    Serial.write(Bluetooth.read());
     if (dataBT == 1){robotOn = true; estrategia = 1;}
     if (dataBT == 2){robotOn = true; estrategia = 2;}
     if (dataBT == 3){robotOn = true; estrategia = 3;}
     if (dataBT == 0){robotOn = false;}
-    if (robotOn == true){digitalWrite(STBY, HIGH);}
-    else{digitalWrite(STBY, LOW);}
+    if (robotOn == true){encendido();}
+    else{apagado();}
   }
 }
 
+//Refresca los valores de todos los sensores, para ser utilizados en el loop
   void checkAllSensors(){
  
     VALOR_INF_FL = Lectura_INF(SEN_INF_FL);
